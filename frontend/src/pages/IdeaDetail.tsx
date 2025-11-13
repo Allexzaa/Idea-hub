@@ -4,6 +4,7 @@ import { getIdeaById, deleteIdea } from '../services/idea.service';
 import { Idea, stageEmojis, stageLabels } from '../types/idea.types';
 import { useAuthStore } from '../store/authStore';
 import { toggleSpark, checkSpark, offerNurture, withdrawNurture, checkNurture, getNurtures, NurtureOffer } from '../services/spark.service';
+import Comments from '../components/Comments';
 
 export default function IdeaDetail() {
   const { id } = useParams<{ id: string }>();
@@ -416,10 +417,15 @@ export default function IdeaDetail() {
         </div>
       )}
 
-      {/* Comments Section (placeholder) */}
+      {/* Comments Section */}
       <div className="card">
-        <h3 className="text-xl font-semibold mb-4">Comments ({idea.commentCount})</h3>
-        <p className="text-gray-600">Comments coming soon! 💬</p>
+        <h3 className="text-xl font-semibold mb-6">Discussion 💬</h3>
+        <Comments
+          ideaId={idea.id}
+          onCommentCountChange={(count) => {
+            setIdea((prev) => (prev ? { ...prev, commentCount: count } : prev));
+          }}
+        />
       </div>
     </div>
   );

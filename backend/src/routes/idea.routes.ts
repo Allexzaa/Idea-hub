@@ -9,6 +9,7 @@ import {
 } from '../controllers/idea.controller';
 import { toggleSpark, checkSpark, getSparks } from '../controllers/spark.controller';
 import { offerNurture, withdrawNurture, checkNurture, getNurtures } from '../controllers/nurture.controller';
+import commentRoutes from './comment.routes';
 import { authenticate, optionalAuth } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -105,5 +106,8 @@ router.get('/:ideaId/nurture/check', authenticate, checkNurture);
  * @access  Public
  */
 router.get('/:ideaId/nurtures', optionalAuth, getNurtures);
+
+// Mount comment routes
+router.use('/:ideaId/comments', commentRoutes);
 
 export default router;

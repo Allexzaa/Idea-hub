@@ -8,6 +8,7 @@ import Register from './pages/Register';
 import IdeasFeed from './pages/IdeasFeed';
 import IdeaDetail from './pages/IdeaDetail';
 import CreateIdea from './pages/CreateIdea';
+import EditIdea from './pages/EditIdea';
 
 // Protected route component
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -70,6 +71,16 @@ function App() {
             <Layout>
               <ProtectedRoute>
                 <CreateIdea />
+              </ProtectedRoute>
+            </Layout>
+          }
+        />
+        <Route
+          path="/ideas/:id/edit"
+          element={
+            <Layout>
+              <ProtectedRoute>
+                <EditIdea />
               </ProtectedRoute>
             </Layout>
           }

@@ -6,6 +6,7 @@ import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import authRoutes from './routes/auth.routes';
 import ideaRoutes from './routes/idea.routes';
+import commentRoutes from './routes/comment-standalone.routes';
 
 // Load environment variables
 dotenv.config();
@@ -43,6 +44,7 @@ app.get('/api', (req, res) => {
 // Mount routes
 app.use('/api/auth', authRoutes);
 app.use('/api/ideas', ideaRoutes);
+app.use('/api/comments', commentRoutes);
 
 // Socket.io connection handling
 io.on('connection', (socket) => {
