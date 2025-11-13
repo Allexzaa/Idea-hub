@@ -15,6 +15,9 @@ import EditProfile from './pages/EditProfile';
 import Messages from './pages/Messages';
 import Conversation from './pages/Conversation';
 import Notifications from './pages/Notifications';
+import CreateCampaign from './pages/CreateCampaign';
+import CampaignDetail from './pages/CampaignDetail';
+import BrowseCampaigns from './pages/BrowseCampaigns';
 
 // Protected route component
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -152,6 +155,34 @@ function App() {
             <Layout>
               <ProtectedRoute>
                 <Notifications />
+              </ProtectedRoute>
+            </Layout>
+          }
+        />
+
+        {/* Funding routes */}
+        <Route
+          path="/campaigns"
+          element={
+            <Layout>
+              <BrowseCampaigns />
+            </Layout>
+          }
+        />
+        <Route
+          path="/campaigns/:campaignId"
+          element={
+            <Layout>
+              <CampaignDetail />
+            </Layout>
+          }
+        />
+        <Route
+          path="/ideas/:ideaId/create-campaign"
+          element={
+            <Layout>
+              <ProtectedRoute>
+                <CreateCampaign />
               </ProtectedRoute>
             </Layout>
           }

@@ -12,6 +12,7 @@ import userRoutes from './routes/user.routes';
 import messageRoutes from './routes/message.routes';
 import notificationRoutes from './routes/notification.routes';
 import attachmentRoutes from './routes/attachment.routes';
+import fundingRoutes from './routes/funding.routes';
 
 // Load environment variables
 dotenv.config();
@@ -57,6 +58,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/attachments', attachmentRoutes);
+app.use('/api/funding', fundingRoutes);
 
 // Socket.io connection handling
 io.on('connection', (socket) => {

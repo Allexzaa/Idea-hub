@@ -35,6 +35,12 @@ export default function Layout({ children }: LayoutProps) {
               >
                 Browse Ideas
               </Link>
+              <Link
+                to="/campaigns"
+                className="text-gray-700 hover:text-primary font-medium"
+              >
+                💰 Campaigns
+              </Link>
 
               {isAuthenticated ? (
                 <>

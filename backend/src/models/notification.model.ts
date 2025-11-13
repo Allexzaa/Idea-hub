@@ -6,7 +6,9 @@ export type NotificationType =
   | 'comment'
   | 'message'
   | 'collaboration_invite'
-  | 'helpful_comment';
+  | 'helpful_comment'
+  | 'investment_received'
+  | 'campaign_funded';
 
 export interface Notification {
   id: string;

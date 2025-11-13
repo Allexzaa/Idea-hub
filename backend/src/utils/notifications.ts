@@ -7,10 +7,14 @@ import { io } from '../index';
 export const sendNotification = async (data: {
   userId: string;
   type: NotificationType;
-  actorId?: string;
+  actorId?: string | null;
+  actorName?: string | null;
   ideaId?: string;
   commentId?: string;
-  message: string;
+  relatedId?: string;
+  relatedTitle?: string;
+  message?: string;
+  metadata?: Record<string, any>;
 }): Promise<void> => {
   try {
     // Create notification in database
@@ -152,5 +156,54 @@ export const sendMessageNotification = async (
     type: 'message',
     actorId: senderId,
     message: `${senderUsername}: ${preview}`,
+  });
+};
+
+/**
+ * Send investment received notification
+ */
+export const sendInvestmentNotification = async (
+  campaignCreatorId: string,
+  investorUserId: string | null,
+  investorUsername: string | null,
+  campaignId: string,
+  campaignTitle: string,
+  amount: number,
+  currency: string
+): Promise<void> => {
+  // Don't notify yourself
+  if (investorUserId && campaignCreatorId === investorUserId) return;
+
+  const investorName = investorUsername || 'Someone';
+  const message = `${investorName} invested ${currency} ${amount} in your campaign "${campaignTitle}"`;
+
+  await sendNotification({
+    userId: campaignCreatorId,
+    type: 'investment_received',
+    actorId: investorUserId,
+    actorName: investorName,
+    relatedId: campaignId,
+    relatedTitle: campaignTitle,
+    message,
+    metadata: { amount: amount.toString(), currency },
+  });
+};
+
+/**
+ * Send campaign funded notification
+ */
+export const sendCampaignFundedNotification = async (
+  campaignCreatorId: string,
+  campaignId: string,
+  campaignTitle: string
+): Promise<void> => {
+  await sendNotification({
+    userId: campaignCreatorId,
+    type: 'campaign_funded',
+    actorId: null,
+    actorName: null,
+    relatedId: campaignId,
+    relatedTitle: campaignTitle,
+    message: `Your campaign "${campaignTitle}" has reached its funding goal! 🎉`,
   });
 };

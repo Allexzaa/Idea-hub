@@ -5,6 +5,8 @@ import { Idea, stageEmojis, stageLabels } from '../types/idea.types';
 import { useAuthStore } from '../store/authStore';
 import { toggleSpark, checkSpark, offerNurture, withdrawNurture, checkNurture, getNurtures, NurtureOffer } from '../services/spark.service';
 import { getIdeaAttachments, Attachment } from '../services/attachment.service';
+import { getActiveIdeaCampaign, formatCurrency, calculateProgress, getDaysRemaining } from '../services/funding.service';
+import { FundingCampaign } from '../types/funding.types';
 import Comments from '../components/Comments';
 import AttachmentList from '../components/AttachmentList';
 
@@ -29,12 +31,17 @@ export default function IdeaDetail() {
   // Attachments state
   const [attachments, setAttachments] = useState<Attachment[]>([]);
 
+  // Funding campaign state
+  const [activeCampaign, setActiveCampaign] = useState<FundingCampaign | null>(null);
+  const [campaignStats, setCampaignStats] = useState<any>(null);
+
   useEffect(() => {
     if (id) {
       loadIdea();
       loadInteractionStatus();
       loadNurtures();
       loadAttachments();
+      loadActiveCampaign();
     }
   }, [id]);
 
@@ -86,6 +93,20 @@ export default function IdeaDetail() {
       setAttachments(data);
     } catch (err) {
       // Silent fail
+    }
+  };
+
+  const loadActiveCampaign = async () => {
+    if (!id) return;
+
+    try {
+      const data = await getActiveIdeaCampaign(id);
+      setActiveCampaign(data.campaign);
+      setCampaignStats(data.stats);
+    } catch (err) {
+      // Silent fail - no active campaign
+      setActiveCampaign(null);
+      setCampaignStats(null);
     }
   };
 
@@ -446,6 +467,89 @@ export default function IdeaDetail() {
             </div>
           )}
         </div>
+      )}
+
+      {/* Funding Campaign Section */}
+      {activeCampaign && campaignStats ? (
+        <div className="card bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-200">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-semibold flex items-center gap-2">
+              <span>💰</span> Active Funding Campaign
+            </h3>
+            <span className="px-3 py-1 bg-green-500 text-white text-xs font-semibold rounded-full">
+              ACTIVE
+            </span>
+          </div>
+
+          <h4 className="text-lg font-medium text-gray-900 mb-3">{activeCampaign.title}</h4>
+
+          <div className="grid grid-cols-3 gap-4 mb-4">
+            <div>
+              <p className="text-2xl font-bold text-green-600">
+                {formatCurrency(campaignStats.totalAmount, activeCampaign.currency)}
+              </p>
+              <p className="text-sm text-gray-600">Raised</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-900">
+                {campaignStats.investorCount}
+              </p>
+              <p className="text-sm text-gray-600">Backers</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-900">
+                {getDaysRemaining(activeCampaign.endDate)}
+              </p>
+              <p className="text-sm text-gray-600">Days Left</p>
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <div className="flex justify-between text-sm mb-1">
+              <span className="text-gray-700">
+                Goal: {formatCurrency(activeCampaign.fundingGoal, activeCampaign.currency)}
+              </span>
+              <span className="font-semibold text-gray-900">
+                {calculateProgress(campaignStats.totalAmount, activeCampaign.fundingGoal)}%
+              </span>
+            </div>
+            <div className="w-full bg-white rounded-full h-3">
+              <div
+                className="bg-gradient-to-r from-green-500 to-blue-500 h-3 rounded-full transition-all duration-300"
+                style={{
+                  width: `${Math.min(calculateProgress(campaignStats.totalAmount, activeCampaign.fundingGoal), 100)}%`,
+                }}
+              ></div>
+            </div>
+          </div>
+
+          <Link
+            to={`/campaigns/${activeCampaign.id}`}
+            className="btn-primary w-full text-center"
+          >
+            View Campaign & Back This Project
+          </Link>
+        </div>
+      ) : (
+        isOwner &&
+        ['building', 'launched', 'validated'].includes(idea.stage) && (
+          <div className="card bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200">
+            <div className="flex items-center gap-3 mb-3">
+              <span className="text-3xl">💡</span>
+              <h3 className="text-xl font-semibold">Ready to Seek Funding?</h3>
+            </div>
+            <p className="text-gray-700 mb-4">
+              Your idea is at the {stageLabels[idea.stage]} stage! Create a funding campaign to get
+              financial support from investors and the community.
+            </p>
+            <button
+              onClick={() => navigate(`/ideas/${idea.id}/create-campaign`)}
+              className="btn-primary"
+            >
+              🚀 Create Funding Campaign
+            </button>
+          </div>
+        )
       )}
 
       {/* Comments Section */}
