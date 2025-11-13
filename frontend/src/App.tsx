@@ -9,6 +9,8 @@ import IdeasFeed from './pages/IdeasFeed';
 import IdeaDetail from './pages/IdeaDetail';
 import CreateIdea from './pages/CreateIdea';
 import EditIdea from './pages/EditIdea';
+import UserProfile from './pages/UserProfile';
+import EditProfile from './pages/EditProfile';
 
 // Protected route component
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -90,6 +92,24 @@ function App() {
           element={
             <Layout>
               <IdeaDetail />
+            </Layout>
+          }
+        />
+        <Route
+          path="/users/:userId"
+          element={
+            <Layout>
+              <UserProfile />
+            </Layout>
+          }
+        />
+        <Route
+          path="/profile/edit"
+          element={
+            <Layout>
+              <ProtectedRoute>
+                <EditProfile />
+              </ProtectedRoute>
             </Layout>
           }
         />
