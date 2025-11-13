@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import authRoutes from './routes/auth.routes';
+import ideaRoutes from './routes/idea.routes';
 
 // Load environment variables
 dotenv.config();
@@ -39,8 +40,9 @@ app.get('/api', (req, res) => {
   res.json({ message: 'Welcome to IdeaNest API 🪺' });
 });
 
-// Mount auth routes
+// Mount routes
 app.use('/api/auth', authRoutes);
+app.use('/api/ideas', ideaRoutes);
 
 // Socket.io connection handling
 io.on('connection', (socket) => {

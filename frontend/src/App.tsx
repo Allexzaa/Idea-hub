@@ -1,9 +1,19 @@
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
+import Layout from './components/Layout';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
+import IdeasFeed from './pages/IdeasFeed';
+import IdeaDetail from './pages/IdeaDetail';
+import CreateIdea from './pages/CreateIdea';
+
+// Protected route component
+function ProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated } = useAuthStore();
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
+}
 
 function App() {
   const { isAuthenticated, isLoading, loadFromStorage } = useAuthStore();
@@ -27,15 +37,53 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Home />} />
+        {/* Public routes without layout */}
         <Route
           path="/login"
-          element={isAuthenticated ? <Navigate to="/" /> : <Login />}
+          element={isAuthenticated ? <Navigate to="/ideas" /> : <Login />}
         />
         <Route
           path="/register"
-          element={isAuthenticated ? <Navigate to="/" /> : <Register />}
+          element={isAuthenticated ? <Navigate to="/ideas" /> : <Register />}
         />
+
+        {/* Routes with layout */}
+        <Route
+          path="/"
+          element={
+            <Layout>
+              <Home />
+            </Layout>
+          }
+        />
+        <Route
+          path="/ideas"
+          element={
+            <Layout>
+              <IdeasFeed />
+            </Layout>
+          }
+        />
+        <Route
+          path="/ideas/new"
+          element={
+            <Layout>
+              <ProtectedRoute>
+                <CreateIdea />
+              </ProtectedRoute>
+            </Layout>
+          }
+        />
+        <Route
+          path="/ideas/:id"
+          element={
+            <Layout>
+              <IdeaDetail />
+            </Layout>
+          }
+        />
+
+        {/* Catch all */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </BrowserRouter>
