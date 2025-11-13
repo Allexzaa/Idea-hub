@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getAllIdeas } from '../services/idea.service';
-import { Idea, stageEmojis, stageLabels } from '../types/idea.types';
+import { Idea, stageEmojis, stageLabels, categoryOptions, helpWantedOptions } from '../types/idea.types';
 import { useAuthStore } from '../store/authStore';
+
+type SortOption = 'recent' | 'sparks' | 'nurtures';
+type StageOption = 'spark' | 'growing' | 'building' | 'launched' | 'validated' | '';
 
 export default function IdeasFeed() {
   const navigate = useNavigate();
@@ -10,22 +13,84 @@ export default function IdeasFeed() {
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(false);
+
+  // Filter states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [selectedStage, setSelectedStage] = useState<StageOption>('');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedHelpWanted, setSelectedHelpWanted] = useState<string[]>([]);
+  const [sortBy, setSortBy] = useState<SortOption>('recent');
+  const [offset, setOffset] = useState(0);
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
-    loadIdeas();
-  }, []);
+    loadIdeas(true);
+  }, [searchQuery, selectedStage, selectedCategories, selectedHelpWanted, sortBy]);
 
-  const loadIdeas = async () => {
+  const loadIdeas = async (reset: boolean = false) => {
     try {
       setIsLoading(true);
-      const response = await getAllIdeas({ sortBy: 'recent', limit: 20 });
-      setIdeas(response.ideas);
+      const currentOffset = reset ? 0 : offset;
+
+      const response = await getAllIdeas({
+        sortBy,
+        limit: 20,
+        offset: currentOffset,
+        search: searchQuery || undefined,
+        stage: selectedStage || undefined,
+        categoryTags: selectedCategories.length > 0 ? selectedCategories : undefined,
+        helpWantedTags: selectedHelpWanted.length > 0 ? selectedHelpWanted : undefined,
+      });
+
+      if (reset) {
+        setIdeas(response.ideas);
+        setOffset(20);
+      } else {
+        setIdeas([...ideas, ...response.ideas]);
+        setOffset(currentOffset + 20);
+      }
+
+      setHasMore(response.pagination.hasMore);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to load ideas');
     } finally {
       setIsLoading(false);
     }
   };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSearchQuery(searchInput);
+  };
+
+  const handleClearFilters = () => {
+    setSearchQuery('');
+    setSearchInput('');
+    setSelectedStage('');
+    setSelectedCategories([]);
+    setSelectedHelpWanted([]);
+    setSortBy('recent');
+  };
+
+  const toggleCategory = (category: string) => {
+    setSelectedCategories(prev =>
+      prev.includes(category)
+        ? prev.filter(c => c !== category)
+        : [...prev, category]
+    );
+  };
+
+  const toggleHelpWanted = (tag: string) => {
+    setSelectedHelpWanted(prev =>
+      prev.includes(tag)
+        ? prev.filter(t => t !== tag)
+        : [...prev, tag]
+    );
+  };
+
+  const hasActiveFilters = searchQuery || selectedStage || selectedCategories.length > 0 || selectedHelpWanted.length > 0;
 
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
@@ -73,6 +138,140 @@ export default function IdeasFeed() {
           >
             ✨ Share Your Spark
           </button>
+        )}
+      </div>
+
+      {/* Search & Filter Bar */}
+      <div className="card space-y-4">
+        {/* Search + Sort */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <form onSubmit={handleSearch} className="flex-1 flex gap-2">
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="Search ideas by title or description..."
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            />
+            <button type="submit" className="btn-primary">
+              🔍
+            </button>
+          </form>
+
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as SortOption)}
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+          >
+            <option value="recent">Newest First</option>
+            <option value="sparks">Most Sparked</option>
+            <option value="nurtures">Most Nurtured</option>
+          </select>
+
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`btn-ghost ${hasActiveFilters ? 'bg-primary text-white' : ''}`}
+          >
+            🎛️ Filters {hasActiveFilters && `(${
+              (searchQuery ? 1 : 0) +
+              (selectedStage ? 1 : 0) +
+              selectedCategories.length +
+              selectedHelpWanted.length
+            })`}
+          </button>
+        </div>
+
+        {/* Advanced Filters */}
+        {showFilters && (
+          <div className="space-y-4 pt-4 border-t border-gray-200">
+            {/* Stage Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Idea Stage
+              </label>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setSelectedStage('')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    selectedStage === ''
+                      ? 'bg-gray-900 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  All Stages
+                </button>
+                {(['spark', 'growing', 'building', 'launched', 'validated'] as const).map((stage) => (
+                  <button
+                    key={stage}
+                    onClick={() => setSelectedStage(stage)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      selectedStage === stage
+                        ? 'bg-primary text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {stageEmojis[stage]} {stageLabels[stage]}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Category Tags */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Categories
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {categoryOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => toggleCategory(option.value)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      selectedCategories.includes(option.value)
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Help Wanted Tags */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Help Needed
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {helpWantedOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    onClick={() => toggleHelpWanted(option.value)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      selectedHelpWanted.includes(option.value)
+                        ? 'bg-orange-500 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Clear Filters */}
+            {hasActiveFilters && (
+              <div className="pt-2 border-t border-gray-200">
+                <button
+                  onClick={handleClearFilters}
+                  className="text-sm text-red-600 hover:text-red-800 font-medium"
+                >
+                  Clear All Filters
+                </button>
+              </div>
+            )}
+          </div>
         )}
       </div>
 
@@ -166,6 +365,24 @@ export default function IdeasFeed() {
               </div>
             </Link>
           ))}
+
+          {/* Load More */}
+          {hasMore && !isLoading && (
+            <div className="text-center pt-6">
+              <button
+                onClick={() => loadIdeas(false)}
+                className="btn-ghost"
+              >
+                Load More Ideas
+              </button>
+            </div>
+          )}
+
+          {isLoading && ideas.length > 0 && (
+            <div className="text-center py-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            </div>
+          )}
         </div>
       )}
     </div>
