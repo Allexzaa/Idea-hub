@@ -2,6 +2,7 @@ import express, { Application } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
+import path from 'path';
 import { createServer } from 'http';
 import { Server as SocketIOServer } from 'socket.io';
 import authRoutes from './routes/auth.routes';
@@ -10,6 +11,7 @@ import commentRoutes from './routes/comment-standalone.routes';
 import userRoutes from './routes/user.routes';
 import messageRoutes from './routes/message.routes';
 import notificationRoutes from './routes/notification.routes';
+import attachmentRoutes from './routes/attachment.routes';
 
 // Load environment variables
 dotenv.config();
@@ -34,6 +36,9 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve static files (uploads)
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
 // Health check route
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'IdeaNest API is running' });
@@ -51,6 +56,7 @@ app.use('/api/comments', commentRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/attachments', attachmentRoutes);
 
 // Socket.io connection handling
 io.on('connection', (socket) => {

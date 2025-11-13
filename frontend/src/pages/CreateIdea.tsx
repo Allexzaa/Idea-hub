@@ -4,7 +4,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { createIdea } from '../services/idea.service';
+import { uploadForIdea } from '../services/attachment.service';
 import { categoryOptions, helpWantedOptions } from '../types/idea.types';
+import FileUpload from '../components/FileUpload';
 
 const createIdeaSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters').max(200),
@@ -21,6 +23,8 @@ export default function CreateIdea() {
   const [error, setError] = useState<string | null>(null);
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [selectedHelpWanted, setSelectedHelpWanted] = useState<string[]>([]);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [isUploadingFiles, setIsUploadingFiles] = useState(false);
 
   const {
     register,
@@ -46,21 +50,40 @@ export default function CreateIdea() {
     );
   };
 
+  const handleFileSelect = (file: File) => {
+    setSelectedFiles((prev) => [...prev, file]);
+  };
+
+  const removeFile = (index: number) => {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const onSubmit = async (data: CreateIdeaFormData) => {
     setIsLoading(true);
     setError(null);
 
     try {
+      // Create idea first
       const idea = await createIdea({
         ...data,
         categoryTags: selectedCategories,
         helpWantedTags: selectedHelpWanted,
       });
+
+      // Upload files if any
+      if (selectedFiles.length > 0) {
+        setIsUploadingFiles(true);
+        await Promise.all(
+          selectedFiles.map((file) => uploadForIdea(idea.id, file))
+        );
+      }
+
       navigate(`/ideas/${idea.id}`);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Failed to create idea');
     } finally {
       setIsLoading(false);
+      setIsUploadingFiles(false);
     }
   };
 
@@ -156,6 +179,49 @@ export default function CreateIdea() {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* File Attachments */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Attachments (optional)
+          </label>
+          <FileUpload
+            onFileSelect={handleFileSelect}
+            isUploading={isUploadingFiles}
+          />
+
+          {selectedFiles.length > 0 && (
+            <div className="mt-4 space-y-2">
+              {selectedFiles.map((file, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                >
+                  <div className="flex items-center space-x-3">
+                    <span className="text-2xl">
+                      {file.type.startsWith('image/') ? '🖼️' : '📄'}
+                    </span>
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{file.name}</p>
+                      <p className="text-xs text-gray-500">
+                        {(file.size / (1024 * 1024)).toFixed(2)} MB
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeFile(index)}
+                    className="text-gray-400 hover:text-red-600"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Submit Buttons */}

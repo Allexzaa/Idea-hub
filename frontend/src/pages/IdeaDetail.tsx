@@ -4,7 +4,9 @@ import { getIdeaById, deleteIdea } from '../services/idea.service';
 import { Idea, stageEmojis, stageLabels } from '../types/idea.types';
 import { useAuthStore } from '../store/authStore';
 import { toggleSpark, checkSpark, offerNurture, withdrawNurture, checkNurture, getNurtures, NurtureOffer } from '../services/spark.service';
+import { getIdeaAttachments, Attachment } from '../services/attachment.service';
 import Comments from '../components/Comments';
+import AttachmentList from '../components/AttachmentList';
 
 export default function IdeaDetail() {
   const { id } = useParams<{ id: string }>();
@@ -24,11 +26,15 @@ export default function IdeaDetail() {
   const [nurtures, setNurtures] = useState<NurtureOffer[]>([]);
   const [showNurtures, setShowNurtures] = useState(false);
 
+  // Attachments state
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
+
   useEffect(() => {
     if (id) {
       loadIdea();
       loadInteractionStatus();
       loadNurtures();
+      loadAttachments();
     }
   }, [id]);
 
@@ -70,6 +76,21 @@ export default function IdeaDetail() {
     } catch (err) {
       // Silent fail
     }
+  };
+
+  const loadAttachments = async () => {
+    if (!id) return;
+
+    try {
+      const data = await getIdeaAttachments(id);
+      setAttachments(data);
+    } catch (err) {
+      // Silent fail
+    }
+  };
+
+  const handleDeleteAttachment = (attachmentId: string) => {
+    setAttachments(attachments.filter(a => a.id !== attachmentId));
   };
 
   const handleSpark = async () => {
@@ -281,6 +302,16 @@ export default function IdeaDetail() {
                 </span>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Attachments */}
+        {attachments.length > 0 && (
+          <div className="mb-6">
+            <AttachmentList
+              attachments={attachments}
+              onDelete={handleDeleteAttachment}
+            />
           </div>
         )}
 
