@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/authStore';
+import { initSocket, disconnectSocket } from './utils/socket';
 import Layout from './components/Layout';
 import Home from './pages/Home';
 import Login from './pages/Login';
@@ -13,6 +14,7 @@ import UserProfile from './pages/UserProfile';
 import EditProfile from './pages/EditProfile';
 import Messages from './pages/Messages';
 import Conversation from './pages/Conversation';
+import Notifications from './pages/Notifications';
 
 // Protected route component
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -21,12 +23,21 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
-  const { isAuthenticated, isLoading, loadFromStorage } = useAuthStore();
+  const { user, isAuthenticated, isLoading, loadFromStorage } = useAuthStore();
 
   useEffect(() => {
     // Load auth state from localStorage on app start
     loadFromStorage();
   }, [loadFromStorage]);
+
+  // Initialize Socket.io when authenticated
+  useEffect(() => {
+    if (isAuthenticated && user?.id) {
+      initSocket(user.id);
+    } else {
+      disconnectSocket();
+    }
+  }, [isAuthenticated, user?.id]);
 
   if (isLoading) {
     return (
@@ -131,6 +142,16 @@ function App() {
             <Layout>
               <ProtectedRoute>
                 <Conversation />
+              </ProtectedRoute>
+            </Layout>
+          }
+        />
+        <Route
+          path="/notifications"
+          element={
+            <Layout>
+              <ProtectedRoute>
+                <Notifications />
               </ProtectedRoute>
             </Layout>
           }

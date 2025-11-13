@@ -9,6 +9,7 @@ import ideaRoutes from './routes/idea.routes';
 import commentRoutes from './routes/comment-standalone.routes';
 import userRoutes from './routes/user.routes';
 import messageRoutes from './routes/message.routes';
+import notificationRoutes from './routes/notification.routes';
 
 // Load environment variables
 dotenv.config();
@@ -49,6 +50,7 @@ app.use('/api/ideas', ideaRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Socket.io connection handling
 io.on('connection', (socket) => {

@@ -13,6 +13,8 @@ import {
   markConversationAsRead,
   getUnreadMessageCount,
 } from '../models/message.model';
+import { findUserById } from '../models/user.model';
+import { sendMessageNotification } from '../utils/notifications';
 import { io } from '../index';
 
 const createMessageSchema = z.object({
@@ -122,6 +124,12 @@ export const sendMessage = async (req: Request, res: Response): Promise<void> =>
 
     // Update last message timestamp
     await updateLastMessageAt(conversation.id);
+
+    // Send notification
+    const user = await findUserById(userId);
+    if (user) {
+      await sendMessageNotification(recipientId, userId, user.username, content);
+    }
 
     // Emit Socket.io event for real-time delivery
     io.to(`user:${recipientId}`).emit('new_message', {

@@ -7,6 +7,8 @@ import {
   getNurturesByIdea,
 } from '../models/nurture.model';
 import { getIdeaById } from '../models/idea.model';
+import { findUserById } from '../models/user.model';
+import { sendNurtureNotification } from '../utils/notifications';
 
 const nurtureSchema = z.object({
   helpMessage: z.string().max(500).optional(),
@@ -37,6 +39,19 @@ export const offerNurture = async (req: Request, res: Response): Promise<void> =
 
     // Add nurture
     const nurture = await addNurture(userId, ideaId, helpMessage);
+
+    // Send notification to idea creator
+    const user = await findUserById(userId);
+    if (user) {
+      await sendNurtureNotification(
+        idea.creator_id,
+        userId,
+        user.username,
+        ideaId,
+        idea.title,
+        helpMessage
+      );
+    }
 
     res.status(200).json({
       nurtured: true,

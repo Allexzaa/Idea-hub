@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
+import NotificationBell from './NotificationBell';
 
 interface LayoutProps {
   children: ReactNode;
@@ -43,10 +44,20 @@ export default function Layout({ children }: LayoutProps) {
                   >
                     ✨ Share Idea
                   </Link>
-                  <div className="flex items-center space-x-4 border-l border-gray-300 pl-6">
-                    <span className="text-gray-700 text-sm">
-                      Hi, {user?.fullName || user?.username}!
-                    </span>
+                  <Link
+                    to="/messages"
+                    className="text-gray-700 hover:text-primary font-medium"
+                  >
+                    💬 Messages
+                  </Link>
+                  <div className="flex items-center space-x-3 border-l border-gray-300 pl-6">
+                    <NotificationBell />
+                    <Link
+                      to={`/users/${user?.id}`}
+                      className="text-gray-700 hover:text-primary text-sm font-medium"
+                    >
+                      {user?.fullName || user?.username}
+                    </Link>
                     <button
                       onClick={handleLogout}
                       className="btn-ghost text-sm"

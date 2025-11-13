@@ -12,6 +12,8 @@ import {
   CommentWithUser,
 } from '../models/comment.model';
 import { getIdeaById } from '../models/idea.model';
+import { findUserById } from '../models/user.model';
+import { sendCommentNotification, sendHelpfulCommentNotification } from '../utils/notifications';
 
 const commentSchema = z.object({
   content: z.string().min(1, 'Comment cannot be empty').max(2000, 'Comment too long'),
@@ -92,6 +94,20 @@ export const create = async (req: Request, res: Response): Promise<void> => {
     if (!commentWithUser) {
       res.status(500).json({ error: 'Failed to create comment' });
       return;
+    }
+
+    // Send notification to idea creator
+    const user = await findUserById(userId);
+    if (user) {
+      await sendCommentNotification(
+        idea.creator_id,
+        userId,
+        user.username,
+        ideaId,
+        idea.title,
+        comment.id,
+        !!validatedData.parentCommentId
+      );
     }
 
     res.status(201).json(toCommentResponse(commentWithUser));
@@ -246,6 +262,21 @@ export const toggleHelpful = async (req: Request, res: Response): Promise<void> 
       res.status(200).json({ helpful: false, message: 'Mark removed' });
     } else {
       await markCommentHelpful(commentId, userId);
+
+      // Send notification to comment author
+      const user = await findUserById(userId);
+      const idea = await getIdeaById(comment.idea_id);
+      if (user && idea) {
+        await sendHelpfulCommentNotification(
+          comment.user_id,
+          userId,
+          user.username,
+          comment.idea_id,
+          idea.title,
+          commentId
+        );
+      }
+
       res.status(200).json({ helpful: true, message: 'Marked as helpful!' });
     }
   } catch (error) {
