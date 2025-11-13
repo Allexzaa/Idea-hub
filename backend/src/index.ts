@@ -8,6 +8,7 @@ import authRoutes from './routes/auth.routes';
 import ideaRoutes from './routes/idea.routes';
 import commentRoutes from './routes/comment-standalone.routes';
 import userRoutes from './routes/user.routes';
+import messageRoutes from './routes/message.routes';
 
 // Load environment variables
 dotenv.config();
@@ -47,10 +48,28 @@ app.use('/api/auth', authRoutes);
 app.use('/api/ideas', ideaRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/messages', messageRoutes);
 
 // Socket.io connection handling
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
+
+  // Join user-specific room for real-time messaging
+  socket.on('join', (userId: string) => {
+    socket.join(`user:${userId}`);
+    console.log(`User ${userId} joined their room`);
+  });
+
+  // Leave user-specific room
+  socket.on('leave', (userId: string) => {
+    socket.leave(`user:${userId}`);
+    console.log(`User ${userId} left their room`);
+  });
+
+  // Typing indicator
+  socket.on('typing', (data: { conversationId: string; userId: string }) => {
+    socket.to(data.conversationId).emit('user_typing', data);
+  });
 
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);

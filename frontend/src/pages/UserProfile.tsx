@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getUserProfile, UserProfileResponse } from '../services/user.service';
+import { startConversation } from '../services/message.service';
 import { useAuthStore } from '../store/authStore';
 import { stageEmojis, stageLabels } from '../types/idea.types';
 
 export default function UserProfile() {
   const { userId } = useParams<{ userId: string }>();
-  const { user: currentUser } = useAuthStore();
+  const navigate = useNavigate();
+  const { user: currentUser, isAuthenticated } = useAuthStore();
   const [profile, setProfile] = useState<UserProfileResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isStartingConversation, setIsStartingConversation] = useState(false);
 
   useEffect(() => {
     if (userId) {
@@ -28,6 +31,23 @@ export default function UserProfile() {
       setError(err.response?.data?.error || 'Failed to load profile');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleStartConversation = async () => {
+    if (!userId || !isAuthenticated) {
+      navigate('/login');
+      return;
+    }
+
+    try {
+      setIsStartingConversation(true);
+      const conversation = await startConversation(userId);
+      navigate(`/messages/${conversation.id}`);
+    } catch (err: any) {
+      alert(err.response?.data?.error || 'Failed to start conversation');
+    } finally {
+      setIsStartingConversation(false);
     }
   };
 
@@ -108,10 +128,22 @@ export default function UserProfile() {
             </div>
           </div>
 
-          {/* Edit Button */}
-          {isOwnProfile && (
+          {/* Action Buttons */}
+          {isOwnProfile ? (
             <Link to="/profile/edit" className="btn-ghost">
               Edit Profile
+            </Link>
+          ) : isAuthenticated ? (
+            <button
+              onClick={handleStartConversation}
+              disabled={isStartingConversation}
+              className="btn-primary disabled:opacity-50"
+            >
+              {isStartingConversation ? 'Starting...' : '💬 Message'}
+            </button>
+          ) : (
+            <Link to="/login" className="btn-primary">
+              Login to Message
             </Link>
           )}
         </div>

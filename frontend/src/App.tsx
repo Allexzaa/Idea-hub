@@ -11,6 +11,8 @@ import CreateIdea from './pages/CreateIdea';
 import EditIdea from './pages/EditIdea';
 import UserProfile from './pages/UserProfile';
 import EditProfile from './pages/EditProfile';
+import Messages from './pages/Messages';
+import Conversation from './pages/Conversation';
 
 // Protected route component
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -109,6 +111,26 @@ function App() {
             <Layout>
               <ProtectedRoute>
                 <EditProfile />
+              </ProtectedRoute>
+            </Layout>
+          }
+        />
+        <Route
+          path="/messages"
+          element={
+            <Layout>
+              <ProtectedRoute>
+                <Messages />
+              </ProtectedRoute>
+            </Layout>
+          }
+        />
+        <Route
+          path="/messages/:conversationId"
+          element={
+            <Layout>
+              <ProtectedRoute>
+                <Conversation />
               </ProtectedRoute>
             </Layout>
           }
